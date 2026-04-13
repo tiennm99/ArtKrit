@@ -9,11 +9,13 @@ ArtKrit is a plugin for Krita that helps artists enhance their drawing skills by
 
 ## Installation
 
-> **Quick Install Available!** We provide easy installation scripts (`install.sh` for macOS/Linux, `install.bat` for Windows) that handle everything automatically. Krita portable is downloaded locally (no system install needed) and all Python dependencies are stored inside the ArtKrit folder. Run `run-krita` to launch Krita with console logging, and `run-server` in a separate terminal to start the composition server.
+> **Quick Install Available!** We provide easy installation scripts (`install.sh` for macOS/Linux, `install.ps1` for Windows) that handle everything automatically. Krita portable is downloaded locally (no system install needed) and all Python dependencies are stored inside the ArtKrit folder. Run `run-krita` to launch Krita with console logging, and `run-server` in a separate terminal to start the composition server.
+>
+> **Windows:** First enable script execution (one-time): `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`, then run `.\install.ps1` in PowerShell.
 
 
 ### Krita
-1. Install Krita from the official website: https://krita.org/en/download/ (tested on version 5.2.9)
+1. Install Krita from the official website: https://krita.org/en/download/ (tested on version 5.2.14)
 2. To facilitate debugging, you can add the path to your Krita binary to your bash or zsh profile. On Mac, it should look like this (it would be bash for older MacOS versions):
     ```bash
     echo 'export PATH="/Applications/krita.app/Contents/MacOS/:$PATH"' >> ~/.zshrc

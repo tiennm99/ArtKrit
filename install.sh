@@ -1,6 +1,6 @@
 #!/bin/bash
 # ArtKrit Fully Portable Installation Script for macOS and Linux
-# Tested with Krita 5.2.9
+# Tested with Krita 5.2.14
 #
 # This creates a FULLY PORTABLE installation:
 # - Krita portable is downloaded and extracted
@@ -10,9 +10,9 @@
 
 set -e
 
-KRITA_VERSION="5.2.9"
-KRITA_APPIMAGE="krita-${KRITA_VERSION}-x86_64.appimage"
-KRITA_APPIMAGE_SHA256="e81dedfdaf52d69daf280856265dcbca81b1c3cfab615a90147a9a63c132b308"
+KRITA_VERSION="5.2.14"
+KRITA_APPIMAGE="krita-${KRITA_VERSION}-x86_64.AppImage"
+KRITA_APPIMAGE_SHA256="58862d8f744d829c3e09a2510cdd9304b2864467c908436564e3ffa9e8ae64d7"
 KRITA_DMG="krita-${KRITA_VERSION}.dmg"
 
 echo "==================================="
