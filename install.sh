@@ -12,6 +12,7 @@ set -e
 
 KRITA_VERSION="5.2.9"
 KRITA_APPIMAGE="krita-${KRITA_VERSION}-x86_64.appimage"
+KRITA_APPIMAGE_SHA256="e81dedfdaf52d69daf280856265dcbca81b1c3cfab615a90147a9a63c132b308"
 KRITA_DMG="krita-${KRITA_VERSION}.dmg"
 
 echo "==================================="
@@ -51,37 +52,81 @@ if ! command -v uv &> /dev/null; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
+# Verify SHA256 hash of a file. Usage: verify_hash <file> <expected_hash>
+verify_hash() {
+    local file="$1" expected="$2"
+    local actual
+    if command -v sha256sum &> /dev/null; then
+        actual=$(sha256sum "$file" | cut -d' ' -f1)
+    else
+        actual=$(shasum -a 256 "$file" | cut -d' ' -f1)
+    fi
+    if [[ "$actual" != "$expected" ]]; then
+        echo "ERROR: Hash mismatch for $(basename "$file")"
+        echo "  Expected: $expected"
+        echo "       Got: $actual"
+        return 1
+    fi
+    echo "Hash verified."
+    return 0
+}
+
 # Download and setup Krita portable
 echo ""
 if [ -d "$KRITA_DIR" ] || [ -f "$KRITA_DIR" ]; then
     echo "Krita portable already exists, skipping download..."
 else
-    echo "Downloading Krita ${KRITA_VERSION} portable..."
-
     if [[ "$OS" == "linux" ]]; then
-        # Linux: Download AppImage
-        KRITA_URL="https://download.kde.org/stable/krita/${KRITA_VERSION}/${KRITA_APPIMAGE}"
-        curl -L -o "$SCRIPT_DIR/$KRITA_APPIMAGE" "$KRITA_URL"
-        chmod +x "$SCRIPT_DIR/$KRITA_APPIMAGE"
+        KRITA_FILE="$KRITA_APPIMAGE"
+        KRITA_HASH="$KRITA_APPIMAGE_SHA256"
+    elif [[ "$OS" == "macos" ]]; then
+        KRITA_FILE="$KRITA_DMG"
+        KRITA_HASH=""
+    fi
 
-        # Extract AppImage
+    KRITA_URL="https://download.kde.org/stable/krita/${KRITA_VERSION}/${KRITA_FILE}"
+    KRITA_PATH="$SCRIPT_DIR/$KRITA_FILE"
+
+    # Check if user already downloaded the file into the folder
+    if [ -f "$KRITA_PATH" ]; then
+        echo "Found $KRITA_FILE, verifying hash..."
+        if [ -n "$KRITA_HASH" ]; then
+            if ! verify_hash "$KRITA_PATH" "$KRITA_HASH"; then
+                echo "The file may be corrupted. Delete it and re-run, or download again."
+                exit 1
+            fi
+        else
+            echo "No hash available for $KRITA_FILE, skipping verification."
+        fi
+    else
+        echo "Downloading Krita ${KRITA_VERSION} portable..."
+        curl -L -o "$KRITA_PATH" "$KRITA_URL"
+
+        if [ -n "$KRITA_HASH" ]; then
+            echo "Verifying download hash..."
+            if ! verify_hash "$KRITA_PATH" "$KRITA_HASH"; then
+                rm -f "$KRITA_PATH"
+                exit 1
+            fi
+        fi
+    fi
+
+    # Extract
+    if [[ "$OS" == "linux" ]]; then
+        chmod +x "$KRITA_PATH"
         echo "Extracting Krita AppImage..."
         cd "$SCRIPT_DIR"
-        ./"$KRITA_APPIMAGE" --appimage-extract
+        ./"$KRITA_FILE" --appimage-extract
         mv squashfs-root krita
-        rm "$KRITA_APPIMAGE"
+        rm "$KRITA_FILE"
         cd "$SCRIPT_DIR"
 
     elif [[ "$OS" == "macos" ]]; then
-        # macOS: Download DMG and extract
-        KRITA_URL="https://download.kde.org/stable/krita/${KRITA_VERSION}/${KRITA_DMG}"
-        curl -L -o "$SCRIPT_DIR/$KRITA_DMG" "$KRITA_URL"
-
         echo "Extracting Krita from DMG..."
-        hdiutil attach "$SCRIPT_DIR/$KRITA_DMG" -mountpoint /Volumes/Krita -quiet
+        hdiutil attach "$KRITA_PATH" -mountpoint /Volumes/Krita -quiet
         cp -R "/Volumes/Krita/krita.app" "$KRITA_DIR"
         hdiutil detach /Volumes/Krita -quiet
-        rm "$SCRIPT_DIR/$KRITA_DMG"
+        rm "$KRITA_PATH"
     fi
 
     echo "Krita portable installed!"

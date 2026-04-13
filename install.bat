@@ -10,6 +10,7 @@ REM To uninstall ArtKrit: remove the junction from pykrita
 setlocal enabledelayedexpansion
 
 set "KRITA_VERSION=5.2.9"
+set "KRITA_ZIP_SHA256=d009ddf11ce73016c1865383fc59f77e5303c4eef7e2b13a0451aa7ec2cfa5fc"
 
 echo ===================================
 echo ArtKrit Installation
@@ -42,24 +43,54 @@ if !ERRORLEVEL! NEQ 0 (
 
 REM Download and setup Krita portable (official ZIP from KDE)
 echo.
+set "KRITA_ZIP_NAME=krita-x64-!KRITA_VERSION!.zip"
+set "KRITA_URL=https://download.kde.org/stable/krita/!KRITA_VERSION!/!KRITA_ZIP_NAME!"
+set "KRITA_ZIP=!SCRIPT_DIR!\!KRITA_ZIP_NAME!"
+
 if exist "!KRITA_DIR!\bin\krita.exe" (
     echo Krita portable already exists, skipping download...
 ) else (
-    echo Downloading Krita !KRITA_VERSION! portable...
-    echo This is the official portable ZIP from krita.org.
-    echo.
+    REM Check if user already downloaded the ZIP into the folder
+    if exist "!KRITA_ZIP!" (
+        echo Found !KRITA_ZIP_NAME!, verifying hash...
+        for /f %%h in ('powershell -Command "(Get-FileHash -Algorithm SHA256 '!KRITA_ZIP!').Hash"') do set "FILE_HASH=%%h"
+        if /i "!FILE_HASH!"=="!KRITA_ZIP_SHA256!" (
+            echo Hash verified. Using local file.
+        ) else (
+            echo ERROR: Hash mismatch! Expected: !KRITA_ZIP_SHA256!
+            echo                          Got: !FILE_HASH!
+            echo The file may be corrupted. Delete it and re-run, or download again.
+            pause
+            exit /b 1
+        )
+    ) else (
+        echo Downloading Krita !KRITA_VERSION! portable...
+        echo This is the official portable ZIP from krita.org.
+        echo.
 
-    set "KRITA_ZIP_NAME=krita-x64-!KRITA_VERSION!.zip"
-    set "KRITA_URL=https://download.kde.org/stable/krita/!KRITA_VERSION!/!KRITA_ZIP_NAME!"
-    set "KRITA_ZIP=!SCRIPT_DIR!\!KRITA_ZIP_NAME!"
+        powershell -Command "Invoke-WebRequest -Uri '!KRITA_URL!' -OutFile '!KRITA_ZIP!'"
 
-    powershell -Command "Invoke-WebRequest -Uri '!KRITA_URL!' -OutFile '!KRITA_ZIP!'"
+        if not exist "!KRITA_ZIP!" (
+            echo ERROR: Failed to download Krita. Please check your internet connection.
+            echo URL: !KRITA_URL!
+            echo.
+            echo You can also download it manually and place it in:
+            echo   !SCRIPT_DIR!
+            pause
+            exit /b 1
+        )
 
-    if not exist "!KRITA_ZIP!" (
-        echo ERROR: Failed to download Krita. Please check your internet connection.
-        echo URL: !KRITA_URL!
-        pause
-        exit /b 1
+        echo Verifying download hash...
+        for /f %%h in ('powershell -Command "(Get-FileHash -Algorithm SHA256 '!KRITA_ZIP!').Hash"') do set "FILE_HASH=%%h"
+        if /i not "!FILE_HASH!"=="!KRITA_ZIP_SHA256!" (
+            echo ERROR: Downloaded file hash mismatch!
+            echo Expected: !KRITA_ZIP_SHA256!
+            echo      Got: !FILE_HASH!
+            del "!KRITA_ZIP!" 2>nul
+            pause
+            exit /b 1
+        )
+        echo Hash verified.
     )
 
     echo Extracting Krita portable...
