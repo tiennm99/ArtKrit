@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor, QPainterPath, QConicalGradient, QBrush
 import os
 import sys
-sys.path.append(os.path.expanduser("~/ddraw/lib/python3.10/site-packages"))
+from ArtKrit.platform_utils import setup_venv_path, get_artkrit_temp_dir
+setup_venv_path()
 import cv2
 import numpy as np
 from PIL import Image
@@ -1172,13 +1173,7 @@ class ValueColor(QWidget):
 
         # Save for Krita (only for color analysis)
         if is_color:
-            temp_dir = os.path.join(
-                os.path.expanduser("~/Library/Application Support/krita/pykrita/artkrit")
-                if sys.platform=='darwin'
-                else os.path.expanduser("~/.local/share/krita/pykrita/artkrit"),
-                "temp"
-            )
-            os.makedirs(temp_dir, exist_ok=True)
+            temp_dir = get_artkrit_temp_dir()
             cv2.imwrite(os.path.join(temp_dir, "canvas_color_overlay.png"),   cv)
             cv2.imwrite(os.path.join(temp_dir, "reference_color_overlay.png"), rv)
     

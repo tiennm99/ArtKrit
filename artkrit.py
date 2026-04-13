@@ -13,7 +13,8 @@ from ArtKrit.script.composition.composition_utils import process_image_direct, r
 
 import os
 import sys
-sys.path.append(os.path.expanduser("~/ddraw/lib/python3.10/site-packages"))
+from ArtKrit.platform_utils import setup_venv_path, get_artkrit_temp_dir
+setup_venv_path()
 
 class PreviewDialog(QDialog):
     """Popup dialog for showing the reference image with overlays"""
@@ -575,14 +576,7 @@ class ArtKrit(DockWidget):
             height = document.height()
                     
             # Ensure the temp directory exists and save the reference image
-            temp_dir = os.getcwd()
-            if sys.platform == "darwin":  # Check if the OS is MacOS
-                temp_dir = os.path.expanduser("~/Library/Application Support/krita/pykrita/artkrit")
-            elif sys.platform == "sys":
-                temp_dir = os.path.expanduser("~/.local/share/krita/pykrita/artkrit")
-
-            temp_dir = os.path.join(temp_dir, "temp")
-            os.makedirs(temp_dir, exist_ok=True)
+            temp_dir = get_artkrit_temp_dir()
             temp_path = os.path.join(temp_dir, "krita_temp_image.png")
 
             print(f"Processing image with file path: {temp_path}")
@@ -815,14 +809,7 @@ class ArtKrit(DockWidget):
         temp_image = QImage(pixel_data, width, height, QImage.Format_RGBA8888).rgbSwapped()
         
         # Save the reference image to temp directory
-        temp_dir = os.getcwd()
-        if sys.platform == "darwin":  # Check if the OS is MacOS
-            temp_dir = os.path.expanduser("~/Library/Application Support/krita/pykrita/artkrit")
-        elif sys.platform == "sys":
-            temp_dir = os.path.expanduser("~/.local/share/krita/pykrita/artkrit")
-
-        temp_dir = os.path.join(temp_dir, "temp")
-        os.makedirs(temp_dir, exist_ok=True)
+        temp_dir = get_artkrit_temp_dir()
 
         # Save the reference image
         temp_path = os.path.join(temp_dir, "krita_temp_image.png")

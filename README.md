@@ -9,6 +9,8 @@ ArtKrit is a plugin for Krita that helps artists enhance their drawing skills by
 
 ## Installation
 
+> **Quick Install Available!** We provide easy installation scripts (`install.sh` for macOS/Linux, `install.bat` for Windows) that handle everything automatically. The installation is **fully portable** - Krita and all dependencies are downloaded and stored inside the ArtKrit folder. To uninstall, simply delete the ArtKrit folder. Run `./run-krita.sh` or `run-krita.bat` to launch.
+
 
 ### Krita
 1. Install Krita from the official website: https://krita.org/en/download/ (tested on version 5.2.9)
