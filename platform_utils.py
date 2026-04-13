@@ -13,34 +13,24 @@ def get_krita_pykrita_dir():
     Returns the Krita pykrita plugins directory.
 
     Searches in order:
-    1. KRITA_RESOURCE_PATH environment variable (portable launcher sets this)
-    2. Portable data folders (platform-specific locations)
+    1. Portable data folder (Linux/macOS: krita-data/krita/pykrita via XDG override)
+    2. Legacy local pykrita folder
     3. System default location per platform
     """
     artkrit_dir = get_artkrit_dir()
 
-    # Priority 1: Environment variable (set by launcher script)
-    env_path = os.environ.get("KRITA_RESOURCE_PATH")
-    if env_path and os.path.exists(env_path):
-        return env_path
-
-    # Priority 2: Portable installation paths
-    if sys.platform == "win32":
-        # Windows: KritaPortable/Data/krita/pykrita
-        portable_pykrita = os.path.join(artkrit_dir, "KritaPortable", "Data", "krita", "pykrita")
-    else:
-        # Linux/macOS: krita-data/krita/pykrita
+    # Priority 1: Portable installation path (Linux/macOS with XDG override)
+    if sys.platform != "win32":
         portable_pykrita = os.path.join(artkrit_dir, "krita-data", "krita", "pykrita")
+        if os.path.exists(portable_pykrita):
+            return portable_pykrita
 
-    if os.path.exists(portable_pykrita):
-        return portable_pykrita
-
-    # Priority 3: Legacy local pykrita folder
+    # Priority 2: Legacy local pykrita folder
     local_pykrita = os.path.join(artkrit_dir, "pykrita")
     if os.path.exists(local_pykrita):
         return local_pykrita
 
-    # Priority 4: System default
+    # Priority 3: System default
     if sys.platform == "win32":
         return os.path.join(os.environ.get("APPDATA", ""), "krita", "pykrita")
     elif sys.platform == "darwin":

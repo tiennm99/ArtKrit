@@ -1,18 +1,18 @@
 @echo off
-REM ArtKrit Fully Portable Installation Script for Windows
+REM ArtKrit Installation Script for Windows
 REM Tested with Krita 5.2.9
 REM
-REM This creates a FULLY PORTABLE installation:
-REM - Krita Portable from PortableApps.com (stores all data locally)
-REM - Virtual environment is stored inside ArtKrit\.venv
-REM - To uninstall: just delete the ArtKrit folder
+REM Downloads official Krita portable ZIP (no system install needed).
+REM Virtual environment stored inside ArtKrit\.venv
+REM To uninstall Krita portable: delete the krita folder
+REM To uninstall ArtKrit: remove the junction from pykrita
 
 setlocal enabledelayedexpansion
 
 set "KRITA_VERSION=5.2.9"
 
 echo ===================================
-echo ArtKrit Fully Portable Installation
+echo ArtKrit Installation
 echo ===================================
 echo.
 
@@ -20,20 +20,18 @@ REM Set variables
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "VENV_DIR=%SCRIPT_DIR%\.venv"
-set "KRITA_DIR=%SCRIPT_DIR%\KritaPortable"
-set "KRITA_DATA_DIR=%KRITA_DIR%\Data\krita"
-set "PYKRITA_DIR=%KRITA_DATA_DIR%\pykrita"
+set "KRITA_DIR=%SCRIPT_DIR%\krita"
+set "PYKRITA_DIR=%APPDATA%\krita\pykrita"
 
-echo Detected: Windows
 echo ArtKrit folder: %SCRIPT_DIR%
 echo Krita portable: %KRITA_DIR%
-echo Krita data: %KRITA_DATA_DIR%
+echo Plugin dir: %PYKRITA_DIR%
 echo Virtual env: %VENV_DIR%
 echo.
 
 REM Check if uv is installed
 where uv >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
+if !ERRORLEVEL! NEQ 0 (
     echo Installing uv package manager...
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
     echo.
@@ -42,49 +40,88 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-REM Download and setup Krita Portable (PortableApps.com version for true portability)
+REM Download and setup Krita portable (official ZIP from KDE)
 echo.
-if exist "%KRITA_DIR%" (
+if exist "!KRITA_DIR!\bin\krita.exe" (
     echo Krita portable already exists, skipping download...
 ) else (
-    echo Downloading Krita Portable %KRITA_VERSION%...
-    echo This is the PortableApps.com version which stores ALL data locally.
+    echo Downloading Krita !KRITA_VERSION! portable...
+    echo This is the official portable ZIP from krita.org.
     echo.
 
-    set "KRITA_PORTABLE_URL=https://download.kde.org/stable/krita/%KRITA_VERSION%/KritaPortable-%KRITA_VERSION%.paf.exe"
-    set "KRITA_INSTALLER=%SCRIPT_DIR%\KritaPortable-%KRITA_VERSION%.paf.exe"
+    set "KRITA_ZIP_NAME=krita-x64-!KRITA_VERSION!.zip"
+    set "KRITA_URL=https://download.kde.org/stable/krita/!KRITA_VERSION!/!KRITA_ZIP_NAME!"
+    set "KRITA_ZIP=!SCRIPT_DIR!\!KRITA_ZIP_NAME!"
 
-    powershell -Command "Invoke-WebRequest -Uri '!KRITA_PORTABLE_URL!' -OutFile '!KRITA_INSTALLER!'"
+    powershell -Command "Invoke-WebRequest -Uri '!KRITA_URL!' -OutFile '!KRITA_ZIP!'"
 
-    echo Extracting Krita Portable...
+    if not exist "!KRITA_ZIP!" (
+        echo ERROR: Failed to download Krita. Please check your internet connection.
+        echo URL: !KRITA_URL!
+        pause
+        exit /b 1
+    )
+
+    echo Extracting Krita portable...
     echo Please wait, this may take a minute...
 
-    REM Run the portable installer in silent mode
-    "!KRITA_INSTALLER!" /DESTINATION="%SCRIPT_DIR%" /SILENT
+    REM Extract to a temp folder, then move to krita/
+    set "KRITA_TEMP=!SCRIPT_DIR!\__krita_extract__"
+    if exist "!KRITA_TEMP!" rmdir /s /q "!KRITA_TEMP!"
+    powershell -Command "Expand-Archive -Path '!KRITA_ZIP!' -DestinationPath '!KRITA_TEMP!' -Force"
 
-    del "!KRITA_INSTALLER!"
-    echo Krita Portable installed!
+    REM Clean up any leftover krita folder from a previous failed install
+    if exist "!KRITA_DIR!" rmdir /s /q "!KRITA_DIR!"
+
+    REM Handle both cases: ZIP with subfolder or files at root
+    REM Check if bin/krita.exe exists directly in the temp folder
+    if exist "!KRITA_TEMP!\bin\krita.exe" (
+        REM Files extracted at root level - rename temp folder to krita
+        ren "!KRITA_TEMP!" "krita"
+    ) else (
+        REM Files inside a subfolder - find it and rename
+        set "FOUND_SUBFOLDER="
+        for /d %%i in ("!KRITA_TEMP!\*") do (
+            if exist "%%i\bin\krita.exe" (
+                set "FOUND_SUBFOLDER=%%i"
+            )
+        )
+        if defined FOUND_SUBFOLDER (
+            REM Move subfolder contents to krita/
+            if exist "!KRITA_DIR!" rmdir /s /q "!KRITA_DIR!"
+            move "!FOUND_SUBFOLDER!" "!KRITA_DIR!" >nul
+            rmdir /s /q "!KRITA_TEMP!" 2>nul
+        ) else (
+            echo ERROR: Could not find krita.exe in extracted files.
+            echo Please extract !KRITA_ZIP_NAME! manually into a folder called "krita".
+            rmdir /s /q "!KRITA_TEMP!" 2>nul
+            pause
+            exit /b 1
+        )
+    )
+
+    del "!KRITA_ZIP!" 2>nul
+    echo Krita portable installed!
 )
 
-REM Create pykrita directory inside Krita's Data folder (true portable)
+REM Create pykrita directory
 echo.
 echo Setting up plugin directory...
-if not exist "%KRITA_DATA_DIR%" mkdir "%KRITA_DATA_DIR%"
-if not exist "%PYKRITA_DIR%" mkdir "%PYKRITA_DIR%"
+if not exist "!PYKRITA_DIR!" mkdir "!PYKRITA_DIR!"
 
 REM Create symlink/junction to ArtKrit in pykrita folder
-set "ARTKRIT_DEST=%PYKRITA_DIR%\ArtKrit"
-if exist "%ARTKRIT_DEST%" (
-    rmdir "%ARTKRIT_DEST%" 2>nul
-    rmdir /s /q "%ARTKRIT_DEST%" 2>nul
+set "ARTKRIT_DEST=!PYKRITA_DIR!\ArtKrit"
+if exist "!ARTKRIT_DEST!" (
+    rmdir "!ARTKRIT_DEST!" 2>nul
+    rmdir /s /q "!ARTKRIT_DEST!" 2>nul
 )
 
 REM Use junction (works without admin/developer mode)
-mklink /J "%ARTKRIT_DEST%" "%SCRIPT_DIR%" >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
+mklink /J "!ARTKRIT_DEST!" "!SCRIPT_DIR!" >nul 2>&1
+if !ERRORLEVEL! NEQ 0 (
     echo WARNING: Could not create link. Copying files instead...
-    xcopy /E /I /Y "%SCRIPT_DIR%\*.py" "%ARTKRIT_DEST%\"
-    xcopy /E /I /Y "%SCRIPT_DIR%\script" "%ARTKRIT_DEST%\script\"
+    xcopy /E /I /Y "!SCRIPT_DIR!\*.py" "!ARTKRIT_DEST!\"
+    xcopy /E /I /Y "!SCRIPT_DIR!\script" "!ARTKRIT_DEST!\script\"
 )
 
 REM Create artkrit.desktop file
@@ -97,11 +134,11 @@ echo X-Python-2-Compatible=false
 echo X-Krita-Manual=Manual.html
 echo Name=ArtKrit
 echo Comment=Docker for ArtKrit
-) > "%PYKRITA_DIR%\artkrit.desktop"
+) > "!PYKRITA_DIR!\artkrit.desktop"
 
-REM Create Python virtual environment INSIDE project folder (portable)
+REM Create Python virtual environment INSIDE project folder
 echo.
-if exist "%VENV_DIR%" (
+if exist "!VENV_DIR!" (
     echo Virtual environment already exists.
     set /p "reinstall=Reinstall dependencies? (y/N): "
     if /i not "!reinstall!"=="y" (
@@ -109,20 +146,20 @@ if exist "%VENV_DIR%" (
         goto :create_launcher
     )
 ) else (
-    echo Creating portable virtual environment with Python 3.10...
-    uv venv "%VENV_DIR%" --python 3.10
+    echo Creating virtual environment with Python 3.10...
+    uv venv "!VENV_DIR!" --python 3.10
 )
 
 REM Install dependencies
 echo.
 echo Installing dependencies (this may take a few minutes)...
-call "%VENV_DIR%\Scripts\activate.bat"
+call "!VENV_DIR!\Scripts\activate.bat"
 
 echo Installing PyTorch...
 uv pip install torch torchvision torchaudio
 
 echo Installing other dependencies...
-uv pip install -r "%SCRIPT_DIR%\requirements.txt"
+uv pip install -r "!SCRIPT_DIR!\requirements.txt"
 
 :create_launcher
 REM Create launcher script
@@ -130,20 +167,15 @@ echo.
 echo Creating launcher script...
 (
 echo @echo off
-echo REM ArtKrit Portable Krita Launcher
-echo REM All data stored in KritaPortable\Data\ folder
+echo REM ArtKrit Krita Launcher
 echo.
 echo set "SCRIPT_DIR=%%~dp0"
 echo set "SCRIPT_DIR=%%SCRIPT_DIR:~0,-1%%"
 echo.
-echo REM For our platform_utils.py
-echo set "KRITA_RESOURCE_PATH=%%SCRIPT_DIR%%\KritaPortable\Data\krita\pykrita"
+echo echo Starting Krita...
 echo.
-echo echo Starting Krita Portable...
-echo echo Data folder: %%SCRIPT_DIR%%\KritaPortable\Data
-echo.
-echo "%%SCRIPT_DIR%%\KritaPortable\KritaPortable.exe" %%*
-) > "%SCRIPT_DIR%\run-krita.bat"
+echo "%%SCRIPT_DIR%%\krita\bin\krita.exe" %%*
+) > "!SCRIPT_DIR!\run-krita.bat"
 
 echo.
 echo ===================================
@@ -159,9 +191,8 @@ echo 2. Enable 'ArtKrit' checkbox
 echo 3. Restart Krita (close and run run-krita.bat again)
 echo 4. Find the docker under Settings ^> Dockers ^> ArtKrit
 echo.
-echo All Krita data stored in: %KRITA_DATA_DIR%
+echo Plugin data stored in: !PYKRITA_DIR!
 echo.
-echo To uninstall: just delete this folder
-echo   %SCRIPT_DIR%
+echo To uninstall: delete the krita folder and remove !ARTKRIT_DEST!
 echo.
 pause

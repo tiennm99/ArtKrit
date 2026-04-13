@@ -164,9 +164,6 @@ export XDG_DATA_HOME="$SCRIPT_DIR/krita-data"
 export XDG_CONFIG_HOME="$SCRIPT_DIR/krita-data/config"
 export XDG_CACHE_HOME="$SCRIPT_DIR/krita-data/cache"
 
-# For our platform_utils.py
-export KRITA_RESOURCE_PATH="$SCRIPT_DIR/krita-data/krita/pykrita"
-
 echo "Starting Krita (portable mode)..."
 echo "Data folder: $XDG_DATA_HOME"
 
@@ -184,9 +181,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export XDG_DATA_HOME="$SCRIPT_DIR/krita-data"
 export XDG_CONFIG_HOME="$SCRIPT_DIR/krita-data/config"
 export XDG_CACHE_HOME="$SCRIPT_DIR/krita-data/cache"
-
-# For our platform_utils.py
-export KRITA_RESOURCE_PATH="$SCRIPT_DIR/krita-data/krita/pykrita"
 
 echo "Starting Krita..."
 echo "Note: macOS may still use ~/Library for some settings"
