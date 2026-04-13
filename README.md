@@ -9,7 +9,7 @@ ArtKrit is a plugin for Krita that helps artists enhance their drawing skills by
 
 ## Installation
 
-> **Quick Install Available!** We provide easy installation scripts (`install.sh` for macOS/Linux, `install.bat` for Windows) that handle everything automatically. Krita portable is downloaded locally (no system install needed) and all Python dependencies are stored inside the ArtKrit folder. Run `./run-krita.sh` or `run-krita.bat` to launch.
+> **Quick Install Available!** We provide easy installation scripts (`install.sh` for macOS/Linux, `install.bat` for Windows) that handle everything automatically. Krita portable is downloaded locally (no system install needed) and all Python dependencies are stored inside the ArtKrit folder. Run `run-krita` to launch Krita with console logging, and `run-server` in a separate terminal to start the composition server.
 
 
 ### Krita

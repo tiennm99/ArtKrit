@@ -162,28 +162,48 @@ echo Installing other dependencies...
 uv pip install -r "!SCRIPT_DIR!\requirements.txt"
 
 :create_launcher
-REM Create launcher script
+REM Create Krita launcher script
 echo.
-echo Creating launcher script...
+echo Creating launcher scripts...
 (
 echo @echo off
-echo REM ArtKrit Krita Launcher
+echo REM ArtKrit Krita Launcher - keeps console open for debug logs
 echo.
 echo set "SCRIPT_DIR=%%~dp0"
 echo set "SCRIPT_DIR=%%SCRIPT_DIR:~0,-1%%"
 echo.
-echo echo Starting Krita...
+echo echo Starting Krita with console logging...
+echo echo Close this window to stop viewing logs.
+echo echo.
 echo.
-echo "%%SCRIPT_DIR%%\krita\bin\krita.exe" %%*
+echo REM start /wait keeps the console open until Krita exits
+echo start /wait "" "%%SCRIPT_DIR%%\krita\bin\krita.exe" %%*
 ) > "!SCRIPT_DIR!\run-krita.bat"
+
+REM Create server launcher script
+(
+echo @echo off
+echo REM ArtKrit Composition Server
+echo.
+echo set "SCRIPT_DIR=%%~dp0"
+echo set "SCRIPT_DIR=%%SCRIPT_DIR:~0,-1%%"
+echo.
+echo echo Starting ArtKrit composition server...
+echo echo Press Ctrl+C to stop.
+echo echo.
+echo.
+echo call "%%SCRIPT_DIR%%\.venv\Scripts\activate.bat"
+echo python "%%SCRIPT_DIR%%\script\composition\server.py" %%*
+) > "!SCRIPT_DIR!\run-server.bat"
 
 echo.
 echo ===================================
 echo Installation Complete!
 echo ===================================
 echo.
-echo To run Krita with ArtKrit:
-echo   run-krita.bat
+echo To run ArtKrit:
+echo   1. run-krita.bat    (launches Krita with console logs)
+echo   2. run-server.bat   (starts the composition server)
 echo.
 echo First time setup in Krita:
 echo 1. Go to Settings ^> Configure Krita ^> Python Plugin Manager

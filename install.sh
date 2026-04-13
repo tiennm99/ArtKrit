@@ -147,14 +147,14 @@ if [ "$goto_done" != "true" ]; then
     uv pip install -r "$SCRIPT_DIR/requirements.txt"
 fi
 
-# Create launcher script with XDG overrides for full portability
+# Create launcher scripts
 echo ""
-echo "Creating launcher script..."
+echo "Creating launcher scripts..."
 LAUNCHER="$SCRIPT_DIR/run-krita.sh"
 if [[ "$OS" == "linux" ]]; then
     cat > "$LAUNCHER" << 'LAUNCHER_EOF'
 #!/bin/bash
-# ArtKrit Portable Krita Launcher
+# ArtKrit Krita Launcher - console stays open for debug logs
 # All data stored in krita-data/ folder (fully portable)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -164,15 +164,16 @@ export XDG_DATA_HOME="$SCRIPT_DIR/krita-data"
 export XDG_CONFIG_HOME="$SCRIPT_DIR/krita-data/config"
 export XDG_CACHE_HOME="$SCRIPT_DIR/krita-data/cache"
 
-echo "Starting Krita (portable mode)..."
+echo "Starting Krita with console logging..."
 echo "Data folder: $XDG_DATA_HOME"
+echo ""
 
 "$SCRIPT_DIR/krita/AppRun" "$@"
 LAUNCHER_EOF
 elif [[ "$OS" == "macos" ]]; then
     cat > "$LAUNCHER" << 'LAUNCHER_EOF'
 #!/bin/bash
-# ArtKrit Portable Krita Launcher for macOS
+# ArtKrit Krita Launcher for macOS - console stays open for debug logs
 # Note: XDG vars may not work for GUI apps on macOS
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -182,21 +183,40 @@ export XDG_DATA_HOME="$SCRIPT_DIR/krita-data"
 export XDG_CONFIG_HOME="$SCRIPT_DIR/krita-data/config"
 export XDG_CACHE_HOME="$SCRIPT_DIR/krita-data/cache"
 
-echo "Starting Krita..."
+echo "Starting Krita with console logging..."
 echo "Note: macOS may still use ~/Library for some settings"
+echo ""
 
 "$SCRIPT_DIR/krita/Contents/MacOS/krita" "$@"
 LAUNCHER_EOF
 fi
 chmod +x "$LAUNCHER"
 
+# Create server launcher script
+SERVER_LAUNCHER="$SCRIPT_DIR/run-server.sh"
+cat > "$SERVER_LAUNCHER" << 'SERVER_EOF'
+#!/bin/bash
+# ArtKrit Composition Server
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+echo "Starting ArtKrit composition server..."
+echo "Press Ctrl+C to stop."
+echo ""
+
+source "$SCRIPT_DIR/.venv/bin/activate"
+python "$SCRIPT_DIR/script/composition/server.py" "$@"
+SERVER_EOF
+chmod +x "$SERVER_LAUNCHER"
+
 echo ""
 echo "==================================="
 echo "Installation Complete!"
 echo "==================================="
 echo ""
-echo "To run Krita with ArtKrit:"
-echo "  ./run-krita.sh"
+echo "To run ArtKrit:"
+echo "  1. ./run-krita.sh    (launches Krita with console logs)"
+echo "  2. ./run-server.sh   (starts the composition server)"
 echo ""
 echo "First time setup in Krita:"
 echo "1. Go to Settings > Configure Krita > Python Plugin Manager"
