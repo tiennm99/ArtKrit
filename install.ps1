@@ -213,35 +213,31 @@ if (-not $skipDeps) {
 Write-Host ""
 Write-Host "Creating launcher scripts..."
 @'
-@echo off
-REM ArtKrit Krita Launcher - keeps console open for debug logs
+# ArtKrit Krita Launcher - keeps console open for debug logs
+$ScriptDir = $PSScriptRoot
+$KritaExe = Join-Path $ScriptDir "krita\bin\krita.exe"
 
-set "SCRIPT_DIR=%~dp0"
-set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+Write-Host "Starting Krita with console logging..."
+Write-Host "Close this window to stop viewing logs."
+Write-Host ""
 
-echo Starting Krita with console logging...
-echo Close this window to stop viewing logs.
-echo.
-
-REM start /wait keeps the console open until Krita exits
-start /wait "" "%SCRIPT_DIR%\krita\bin\krita.exe" %*
-'@ | Set-Content (Join-Path $SCRIPT_DIR "run-krita.bat") -Encoding ASCII
+& $KritaExe @args | Out-Host
+'@ | Set-Content (Join-Path $SCRIPT_DIR "run-krita.ps1") -Encoding UTF8
 
 # Create server launcher script
 @'
-@echo off
-REM ArtKrit Composition Server
+# ArtKrit Composition Server
+$ScriptDir = $PSScriptRoot
+$VenvActivate = Join-Path $ScriptDir ".venv\Scripts\Activate.ps1"
+$ServerScript = Join-Path $ScriptDir "script\composition\server.py"
 
-set "SCRIPT_DIR=%~dp0"
-set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+Write-Host "Starting ArtKrit composition server..."
+Write-Host "Press Ctrl+C to stop."
+Write-Host ""
 
-echo Starting ArtKrit composition server...
-echo Press Ctrl+C to stop.
-echo.
-
-call "%SCRIPT_DIR%\.venv\Scripts\activate.bat"
-python "%SCRIPT_DIR%\script\composition\server.py" %*
-'@ | Set-Content (Join-Path $SCRIPT_DIR "run-server.bat") -Encoding ASCII
+& $VenvActivate
+python $ServerScript @args
+'@ | Set-Content (Join-Path $SCRIPT_DIR "run-server.ps1") -Encoding UTF8
 
 Write-Host ""
 Write-Host "==================================="
@@ -249,13 +245,13 @@ Write-Host "Installation Complete!"
 Write-Host "==================================="
 Write-Host ""
 Write-Host "To run ArtKrit:"
-Write-Host "  1. run-krita.bat    (launches Krita with console logs)"
-Write-Host "  2. run-server.bat   (starts the composition server)"
+Write-Host "  1. .\run-krita.ps1    (launches Krita with console logs)"
+Write-Host "  2. .\run-server.ps1   (starts the composition server)"
 Write-Host ""
 Write-Host "First time setup in Krita:"
 Write-Host "  1. Go to Settings > Configure Krita > Python Plugin Manager"
 Write-Host "  2. Enable 'ArtKrit' checkbox"
-Write-Host "  3. Restart Krita (close and run run-krita.bat again)"
+Write-Host "  3. Restart Krita (close and run .\run-krita.ps1 again)"
 Write-Host "  4. Find the docker under Settings > Dockers > ArtKrit"
 Write-Host ""
 Write-Host "Plugin data stored in: $PYKRITA_DIR"
