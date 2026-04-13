@@ -215,28 +215,25 @@ Write-Host "Creating launcher scripts..."
 @'
 # ArtKrit Krita Launcher - keeps console open for debug logs
 $ScriptDir = $PSScriptRoot
-$KritaExe = Join-Path $ScriptDir "krita\bin\krita.exe"
 
 Write-Host "Starting Krita with console logging..."
 Write-Host "Close this window to stop viewing logs."
 Write-Host ""
 
-& $KritaExe @args | Out-Host
+& (Join-Path $ScriptDir "krita\bin\krita.exe") @args
 '@ | Set-Content (Join-Path $SCRIPT_DIR "run-krita.ps1") -Encoding UTF8
 
 # Create server launcher script
 @'
 # ArtKrit Composition Server
 $ScriptDir = $PSScriptRoot
-$VenvActivate = Join-Path $ScriptDir ".venv\Scripts\Activate.ps1"
-$ServerScript = Join-Path $ScriptDir "script\composition\server.py"
 
 Write-Host "Starting ArtKrit composition server..."
 Write-Host "Press Ctrl+C to stop."
 Write-Host ""
 
-& $VenvActivate
-python $ServerScript @args
+. (Join-Path $ScriptDir ".venv\Scripts\Activate.ps1")
+python (Join-Path $ScriptDir "script\composition\server.py") @args
 '@ | Set-Content (Join-Path $SCRIPT_DIR "run-server.ps1") -Encoding UTF8
 
 Write-Host ""
