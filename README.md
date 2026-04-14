@@ -15,7 +15,7 @@ ArtKrit is a plugin for Krita that helps artists enhance their drawing skills by
 
 
 ### Krita
-1. Install Krita from the official website: https://krita.org/en/download/ (tested on version 5.2.14)
+1. Install Krita from the official website: https://krita.org/en/download/ (tested on version 5.2.9)
 2. To facilitate debugging, you can add the path to your Krita binary to your bash or zsh profile. On Mac, it should look like this (it would be bash for older MacOS versions):
     ```bash
     echo 'export PATH="/Applications/krita.app/Contents/MacOS/:$PATH"' >> ~/.zshrc

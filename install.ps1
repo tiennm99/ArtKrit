@@ -1,5 +1,5 @@
 # ArtKrit Installation Script for Windows (PowerShell)
-# Tested with Krita 5.2.14
+# Tested with Krita 5.2.9
 #
 # Downloads official Krita portable ZIP (no system install needed).
 # Virtual environment stored inside ArtKrit\.venv
@@ -12,8 +12,8 @@
 
 $ErrorActionPreference = "Stop"
 
-$KRITA_VERSION = "5.2.14"
-$KRITA_ZIP_SHA256 = "fe755f67e8b69297717e8a7a5551acf14e998cfa206b6a0aad11368704a735de"
+$KRITA_VERSION = "5.2.9"
+$KRITA_ZIP_SHA256 = "d009ddf11ce73016c1865383fc59f77e5303c4eef7e2b13a0451aa7ec2cfa5fc"
 
 Write-Host "==================================="
 Write-Host "ArtKrit Installation"
@@ -56,6 +56,12 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
     }
     Write-Host "uv installed successfully."
     Write-Host ""
+}
+
+# Run uv via cmd /c to bypass PowerShell Application Control policies
+function Invoke-Uv {
+    cmd /c "uv $args"
+    if ($LASTEXITCODE -ne 0) { throw "uv command failed with exit code $LASTEXITCODE" }
 }
 
 # Download and setup Krita portable (official ZIP from KDE)
@@ -194,7 +200,7 @@ if (Test-Path $VENV_DIR) {
     }
 } else {
     Write-Host "Creating virtual environment with Python 3.10..."
-    uv venv $VENV_DIR --python 3.10
+    Invoke-Uv venv $VENV_DIR --python 3.10
 }
 
 if (-not $skipDeps) {
@@ -203,17 +209,18 @@ if (-not $skipDeps) {
     & "$VENV_DIR\Scripts\activate.bat"
 
     Write-Host "Installing PyTorch..."
-    uv pip install torch torchvision torchaudio
+    Invoke-Uv pip install torch torchvision torchaudio
 
     Write-Host "Installing other dependencies..."
-    uv pip install -r (Join-Path $SCRIPT_DIR "requirements.txt")
+    $reqFile = Join-Path $SCRIPT_DIR "requirements.txt"
+    Invoke-Uv pip install -r $reqFile
 }
 
 # Create Krita launcher script
 Write-Host ""
 Write-Host "Creating launcher scripts..."
 @'
-# ArtKrit Krita Launcher - waits for Krita and enables console logging
+# ArtKrit Krita Launcher - waits for Krita and streams console logs
 $ScriptDir = $PSScriptRoot
 $KritaExe = Join-Path $ScriptDir "krita\bin\krita.exe"
 
@@ -224,8 +231,8 @@ Write-Host "Starting Krita with console logging..."
 Write-Host "This window stays open until Krita exits."
 Write-Host ""
 
-$proc = Start-Process -FilePath $KritaExe -ArgumentList $args -PassThru -NoNewWindow
-$proc.WaitForExit()
+# Run via cmd /c so krita.exe inherits the console and streams logs directly
+cmd /c "`"$KritaExe`" $args"
 '@ | Set-Content (Join-Path $SCRIPT_DIR "run-krita.ps1") -Encoding UTF8
 
 # Create server launcher script
